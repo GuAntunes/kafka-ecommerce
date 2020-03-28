@@ -3,6 +3,7 @@ package br.com.gustavoantunes.ecommerce;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -16,14 +17,19 @@ public class NewOrderMain {
 		// Apenas o producer.send(..) envia a mensagem de forma assincrona, ou seja
 		// não irá apresentar o retorno se a mensagem foi enviada com sucesso
 		// o get() faz com que o metodo espere o retorno da mensagem
-		produder.send(record, (data, ex) -> {
+		Callback callback = (data, ex) -> {
 			if(ex != null) {
 				ex.printStackTrace();
 				return;
 			}
 			System.out.println("Sucesso enviando " + data.topic() + "particao:::" + data.partition() + "/ offset " + data.offset() + "/ timestamp" + data.timestamp());
 		
-		}).get();
+		};
+		var email = "Thank you for your order! We are processing your order";
+		var emailRecord = new ProducerRecord<>("ECOMMERCE_SEND_EMAIL", email, email);
+		
+		produder.send(record, callback).get();
+		produder.send(emailRecord, callback).get();
 	}
 
 	private static Properties properties() {
